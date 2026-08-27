@@ -38,6 +38,23 @@ Todo lo descrito originalmente en este documento fue implementado y verificado:
 - Filtro `cortes:[1]` → 20 unidades. Filtro `from:"2026-03-31"` → 39 unidades.
 - Restock sugerido = ["Caja de breaker de 8 posiciones" (~8 días), "Interruptor Simple" (~15 días)].
 
+## Distribución / deploy
+
+- Repo público: https://github.com/adrianfdez469/inventory-analyzer-la-palma (rama `main`).
+- Deploy automático a GitHub Pages vía `.github/workflows/deploy-pages.yml` en cada push a `main`
+  (o manualmente con `gh workflow run deploy-pages.yml -R adrianfdez469/inventory-analyzer-la-palma`).
+- URL pública (instalable como PWA en Windows/Android desde Chrome): 
+  https://adrianfdez469.github.io/inventory-analyzer-la-palma/
+- `apps/pwa/vite.config.ts` lee `VITE_BASE` (env var) para el `base` de Vite — el workflow lo fija a
+  `/inventory-analyzer-la-palma/`; en local sin esa var usa `/` (para `pnpm dev`/`pnpm preview`).
+- `packages/core/tests/fixtures/ferreteria.xlsx` es una copia REAL del Excel del negocio (precios,
+  proveedores, márgenes) — está en `.gitignore`, NUNCA se sube al repo público. Los tests que lo usan
+  (`parser.test.ts`, `analytics.test.ts`) usan `describe.skipIf(!hasFixture)` así que se saltan solos
+  en CI (donde el archivo no existe) y corren normal en local.
+- Nota de pnpm: `pnpm-workspace.yaml` necesita `allowBuilds: { esbuild: true }` además de
+  `onlyBuiltDependencies: [esbuild]` — solo lo segundo no basta en esta versión de pnpm y el install
+  falla en CI con `ERR_PNPM_IGNORED_BUILDS`.
+
 ## Cómo levantar el proyecto
 
 ```
