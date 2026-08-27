@@ -38,7 +38,7 @@ const ALIASES: Record<keyof ColumnMap, string[]> = {
   revenue: ["dinero total vendido"],
   adrianInvProfit: ["dinero adrian inv"],
   profitAlejandro: ["ganancia alejandro"],
-  storeShare: ["dinero tienda 50"],
+  storeShare: ["dinero tienda"],
   adrianInvestment: ["inversion adrian"],
   profitAdrian: ["ganancia adrian"],
 };
@@ -81,6 +81,15 @@ function cell(row: unknown[] | undefined, idx: number | undefined): unknown {
   return row[idx] ?? null;
 }
 
+interface CorteDraft {
+  index: number;
+  title: string;
+  exchangeRate: number | null;
+  startDate: string;
+  endDate: string | null;
+  lines: CorteLine[];
+}
+
 export function parseCortesSheet(
   ws: XLSX.WorkSheet,
   sheetName: string,
@@ -91,7 +100,7 @@ export function parseCortesSheet(
     defval: null,
   });
   const warnings: string[] = [];
-  const cortes: Corte[] = [];
+  const drafts: CorteDraft[] = [];
 
   for (let r = 0; r < rows.length; r++) {
     const info = findCorteTitleInRow(rows[r]);
@@ -155,21 +164,38 @@ export function parseCortesSheet(
       });
     }
 
-    const days = Math.max(1, diffDays(info.startDate, info.endDate));
-    cortes.push({
+    drafts.push({
       index: info.index,
       title: findTitleText(rows[r]) ?? `Corte ${info.index}`,
       exchangeRate: info.exchangeRate,
       startDate: info.startDate,
       endDate: info.endDate,
-      days,
       lines,
     });
 
     r = p - 1;
   }
 
-  cortes.sort((a, b) => a.startDate.localeCompare(b.startDate));
+  drafts.sort((a, b) => a.startDate.localeCompare(b.startDate));
+
+  // Algunos locales titulan el corte con una sola fecha (sin rango); se completa el fin con
+  // el inicio del corte siguiente, o con su propio inicio si es el último (período abierto).
+  for (let i = 0; i < drafts.length; i++) {
+    if (drafts[i].endDate == null) {
+      drafts[i].endDate = i + 1 < drafts.length ? drafts[i + 1].startDate : drafts[i].startDate;
+    }
+  }
+
+  const cortes: Corte[] = drafts.map((d, i) => ({
+    id: i + 1,
+    index: d.index,
+    title: d.title,
+    exchangeRate: d.exchangeRate,
+    startDate: d.startDate,
+    endDate: d.endDate as string,
+    days: Math.max(1, diffDays(d.startDate, d.endDate as string)),
+    lines: d.lines,
+  }));
 
   for (let i = 1; i < cortes.length; i++) {
     const prev = cortes[i - 1];

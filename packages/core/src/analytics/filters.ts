@@ -5,7 +5,7 @@ export function filterCortes(cortes: Corte[], filters: AnalyticsFilters): Corte[
 
   if (filters.cortes && filters.cortes.length > 0) {
     const set = new Set(filters.cortes);
-    result = result.filter((c) => set.has(c.index));
+    result = result.filter((c) => set.has(c.id));
   }
 
   if (filters.from || filters.to) {

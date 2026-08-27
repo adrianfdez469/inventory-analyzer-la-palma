@@ -43,7 +43,9 @@ export function RestockPage() {
               </div>
               <dl className="grid grid-cols-2 gap-1 text-xs text-slate-400">
                 <dt>Stock actual</dt>
-                <dd className="text-right text-slate-200">{product.stockRemaining} uds</dd>
+                <dd className="text-right text-slate-200">
+                  {fmtQty(product.stockRemaining)} uds
+                </dd>
                 <dt>Ritmo de venta</dt>
                 <dd className="text-right text-slate-200">
                   {fmtQty(product.unitsPerDay)} uds/día

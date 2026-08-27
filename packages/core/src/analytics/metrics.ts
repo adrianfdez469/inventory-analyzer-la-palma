@@ -5,7 +5,7 @@ import type {
   CorteAggregate,
   CorteLine,
   CorteProductRecord,
-  InventorySnapshot,
+  LocationSnapshot,
   ProductAnalytics,
   Purchase,
   PurchasePriceInfo,
@@ -85,11 +85,11 @@ function buildPurchasePriceInfo(
 }
 
 export function computeAnalytics(
-  snapshot: InventorySnapshot,
+  location: LocationSnapshot,
   filters: AnalyticsFilters = {},
 ): Analytics {
   const warnings: string[] = [];
-  const filtered = filterCortes(snapshot.cortes, filters);
+  const filtered = filterCortes(location.cortes, filters);
 
   if (filtered.length === 0) {
     warnings.push("Ningún corte cumple el filtro seleccionado.");
@@ -166,12 +166,12 @@ export function computeAnalytics(
 
     const purchasePrice = buildPurchasePriceInfo(
       product,
-      snapshot.purchases,
+      location.purchases,
       hasFilters ? { start: rangeStart, end: rangeEnd } : null,
     );
 
     const perCorte: CorteProductRecord[] = refs.map((r) => ({
-      corte: r.corte.index,
+      corteId: r.corte.id,
       startDate: r.corte.startDate,
       endDate: r.corte.endDate,
       initialStock: r.line.initialStock,
@@ -242,7 +242,7 @@ export function computeAnalytics(
   }
 
   const corteAggregates: CorteAggregate[] = filtered.map((corte) => ({
-    index: corte.index,
+    id: corte.id,
     startDate: corte.startDate,
     endDate: corte.endDate,
     days: corte.days,
@@ -261,13 +261,13 @@ export function computeAnalytics(
     0,
   );
 
-  const purchasesInRange = snapshot.purchases.filter(
+  const purchasesInRange = location.purchases.filter(
     (p) =>
       p.date != null &&
       (rangeStart == null || p.date >= rangeStart) &&
       (rangeEnd == null || p.date <= rangeEnd),
   );
-  const investmentInRange = (hasFilters ? purchasesInRange : snapshot.purchases).reduce(
+  const investmentInRange = (hasFilters ? purchasesInRange : location.purchases).reduce(
     (sum, p) => sum + (p.totalSpentUSD ?? 0),
     0,
   );
@@ -287,7 +287,7 @@ export function computeAnalytics(
     rangeEnd,
   };
 
-  const rateSource = filtered.length > 0 ? filtered : snapshot.cortes;
+  const rateSource = filtered.length > 0 ? filtered : location.cortes;
   const lastRate = rateSource[rateSource.length - 1]?.exchangeRate ?? null;
   const definedRates = rateSource
     .map((c) => c.exchangeRate)

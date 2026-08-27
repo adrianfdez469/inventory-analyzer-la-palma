@@ -102,12 +102,12 @@ export function ProductsPage() {
                 onClick={() => setDetailProduct(p.product)}
               >
                 <td className="td font-medium text-slate-100">{p.product}</td>
-                <td className="td">{p.unitsSold}</td>
+                <td className="td">{fmtQty(p.unitsSold)}</td>
                 <td className="td">{fmtQty(p.unitsPerDay)}</td>
                 <td className="td">
                   {p.neverSold ? "Nunca vendido" : `${p.daysSinceLastSale ?? "—"} días`}
                 </td>
-                <td className="td">{p.stockRemaining}</td>
+                <td className="td">{fmtQty(p.stockRemaining)}</td>
                 <td className="td">{money(p.stockValueAtCost, currency, rate)}</td>
                 <td className="td">{money(p.lastPurchasePrice, "USD", rate)}</td>
                 <td className="td">{money(p.profit, currency, rate)}</td>

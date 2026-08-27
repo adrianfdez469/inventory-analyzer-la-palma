@@ -16,11 +16,17 @@ export function parseResumenSheet(ws: XLSX.WorkSheet): ResumenRow[] {
     const h = row[7];
     if (typeof h !== "string" || !/^corte/i.test(h.trim())) continue;
 
+    const totalSales = toNum(row[1]);
+    const moneyReceived = toNum(row[2]);
+    const investment = toNum(row[3]);
+    // Filas de plantilla para cortes futuros aún sin llenar: cortar acá.
+    if (totalSales == null && moneyReceived == null && investment == null) break;
+
     result.push({
       corte: h.trim(),
-      totalSales: toNum(row[1]),
-      moneyReceived: toNum(row[2]),
-      investment: toNum(row[3]),
+      totalSales,
+      moneyReceived,
+      investment,
       profitAlejandro: toNum(row[4]),
       profitAdrian: toNum(row[5]),
       profitPct: toNum(row[6]),

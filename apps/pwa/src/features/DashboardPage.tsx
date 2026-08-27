@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import { useAnalytics } from "../AnalyticsContext.js";
 import { useAppStore } from "../store/appStore.js";
-import { money } from "../lib/format.js";
+import { fmtQty, money } from "../lib/format.js";
 import { Card, EmptyState, KpiCard } from "../components/ui.js";
 
 const CHART_GREEN = "#22c55e";
@@ -49,7 +49,7 @@ export function DashboardPage() {
   const { totals } = analytics;
 
   const corteData = analytics.corteAggregates.map((c) => ({
-    name: `C${c.index}`,
+    name: `C${c.id}`,
     profit: c.profit,
     units: c.unitsSold,
   }));
@@ -65,7 +65,7 @@ export function DashboardPage() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <KpiCard label="Ganancia" value={money(totals.profit, currency, rate)} />
         <KpiCard label="Ventas" value={money(totals.revenue, currency, rate)} />
-        <KpiCard label="Unidades vendidas" value={String(totals.unitsSold)} />
+        <KpiCard label="Unidades vendidas" value={fmtQty(totals.unitsSold)} />
         <KpiCard
           label="Ganancia / día"
           value={money(totals.profitPerDay, currency, rate)}

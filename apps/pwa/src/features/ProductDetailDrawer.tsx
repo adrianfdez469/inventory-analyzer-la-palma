@@ -37,7 +37,7 @@ export function ProductDetailDrawer() {
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="card">
             <div className="text-xs text-slate-500">Vendidos</div>
-            <div className="text-slate-100">{product.unitsSold} uds</div>
+            <div className="text-slate-100">{fmtQty(product.unitsSold)} uds</div>
           </div>
           <div className="card">
             <div className="text-xs text-slate-500">Uds/día</div>
@@ -59,7 +59,7 @@ export function ProductDetailDrawer() {
           </div>
           <div className="card">
             <div className="text-xs text-slate-500">Stock actual</div>
-            <div className="text-slate-100">{product.stockRemaining} uds</div>
+            <div className="text-slate-100">{fmtQty(product.stockRemaining)} uds</div>
           </div>
           <div className="card">
             <div className="text-xs text-slate-500">Valor stock</div>
@@ -128,11 +128,11 @@ export function ProductDetailDrawer() {
               </thead>
               <tbody>
                 {product.perCorte.map((c) => (
-                  <tr key={c.corte} className="border-b border-slate-900">
-                    <td className="td">C{c.corte}</td>
-                    <td className="td">{c.initialStock}</td>
-                    <td className="td">{c.soldQty}</td>
-                    <td className="td">{c.remaining}</td>
+                  <tr key={c.corteId} className="border-b border-slate-900">
+                    <td className="td">C{c.corteId}</td>
+                    <td className="td">{fmtQty(c.initialStock)}</td>
+                    <td className="td">{fmtQty(c.soldQty)}</td>
+                    <td className="td">{fmtQty(c.remaining)}</td>
                     <td className="td">{money(c.revenue, currency, rate)}</td>
                     <td className="td">{money(c.profit, currency, rate)}</td>
                   </tr>

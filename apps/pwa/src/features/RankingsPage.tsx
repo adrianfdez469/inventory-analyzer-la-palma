@@ -100,7 +100,7 @@ export function RankingsPage() {
               >
                 <td className="td text-slate-500">{i + 1}</td>
                 <td className="td font-medium text-slate-100">{p.product}</td>
-                <td className="td">{p.unitsSold}</td>
+                <td className="td">{fmtQty(p.unitsSold)}</td>
                 <td className="td">{money(p.profitPerDay, currency, rate)}</td>
                 <td className="td">
                   <ScoreBar value={p.juicinessScore} />

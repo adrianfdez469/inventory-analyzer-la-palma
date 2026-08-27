@@ -22,6 +22,8 @@ function Header() {
   const page = useAppStore((s) => s.page);
   const setPage = useAppStore((s) => s.setPage);
   const snapshot = useAppStore((s) => s.snapshot);
+  const currentLocationId = useAppStore((s) => s.currentLocationId);
+  const setCurrentLocationId = useAppStore((s) => s.setCurrentLocationId);
   const currency = useAppStore((s) => s.currency);
   const setCurrency = useAppStore((s) => s.setCurrency);
   const analytics = useAnalytics();
@@ -44,6 +46,19 @@ function Header() {
         ))}
       </nav>
       <div className="ml-auto flex items-center gap-2">
+        {snapshot && snapshot.locations.length > 1 && (
+          <div className="flex gap-1">
+            {snapshot.locations.map((loc) => (
+              <button
+                key={loc.id}
+                className={currentLocationId === loc.id ? "tab-active" : "tab"}
+                onClick={() => setCurrentLocationId(loc.id)}
+              >
+                {loc.label}
+              </button>
+            ))}
+          </div>
+        )}
         <button
           className="btn-secondary"
           disabled={!analytics?.displayRate}

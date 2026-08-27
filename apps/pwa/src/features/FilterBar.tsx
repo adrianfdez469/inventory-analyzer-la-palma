@@ -4,20 +4,22 @@ import { fmtDate } from "../lib/format.js";
 
 export function FilterBar() {
   const snapshot = useAppStore((s) => s.snapshot);
+  const currentLocationId = useAppStore((s) => s.currentLocationId);
   const filters = useAppStore((s) => s.filters);
   const setFilters = useAppStore((s) => s.setFilters);
   const analytics = useAnalytics();
 
-  if (!snapshot) return null;
+  const location = snapshot?.locations.find((l) => l.id === currentLocationId);
+  if (!location) return null;
 
   const selectedCortes = new Set(filters.cortes ?? []);
   const allSelected = selectedCortes.size === 0;
 
-  function toggleCorte(index: number) {
+  function toggleCorte(id: number) {
     const current = new Set(filters.cortes ?? []);
-    if (current.has(index)) current.delete(index);
-    else current.add(index);
-    const next = current.size === snapshot!.cortes.length || current.size === 0
+    if (current.has(id)) current.delete(id);
+    else current.add(id);
+    const next = current.size === location!.cortes.length || current.size === 0
       ? undefined
       : [...current];
     setFilters({ ...filters, cortes: next });
@@ -43,16 +45,16 @@ export function FilterBar() {
       </div>
 
       <div className="flex flex-wrap items-center gap-1">
-        {snapshot.cortes.map((c) => {
-          const active = allSelected || selectedCortes.has(c.index);
+        {location.cortes.map((c) => {
+          const active = allSelected || selectedCortes.has(c.id);
           return (
             <button
-              key={c.index}
+              key={c.id}
               className={active ? "tab-active" : "tab"}
-              onClick={() => toggleCorte(c.index)}
+              onClick={() => toggleCorte(c.id)}
               title={`${fmtDate(c.startDate)} – ${fmtDate(c.endDate)}`}
             >
-              C{c.index} · {fmtDate(c.startDate)}–{fmtDate(c.endDate)}
+              C{c.id} · {fmtDate(c.startDate)}–{fmtDate(c.endDate)}
             </button>
           );
         })}

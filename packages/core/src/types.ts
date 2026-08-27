@@ -38,6 +38,12 @@ export interface CorteLine {
 
 /** Bloque "Corte N" con su rango de fechas y las líneas de producto */
 export interface Corte {
+  /** Secuencial único dentro de su local (1, 2, 3...), asignado tras ordenar por fecha.
+   *  Es el identificador real para filtros/keys — algunos locales (ej. Leo) reinician su
+   *  propia numeración a mitad de la hoja, así que `index` puede repetirse. */
+  id: number;
+  /** Número de corte tal cual aparece en la hoja (puede repetirse entre locales o incluso
+   *  dentro del mismo local si el negocio reinició su numeración). Solo para mostrar. */
   index: number;
   title: string;
   exchangeRate: number | null;
@@ -58,15 +64,27 @@ export interface ResumenRow {
   profitPct: number | null;
 }
 
-/** Resultado completo de importar el Excel */
-export interface InventorySnapshot {
-  version: 1;
-  fileName: string;
-  importedAt: string;
+/** Datos de un local/negocio (ej. Palma, Leo, Vedado) dentro del Excel */
+export interface LocationSnapshot {
+  /** Nombre del local normalizado (minúsculas, sin acentos) — estable, usado como key */
+  id: string;
+  /** Nombre del local para mostrar (ej. "Palma", "Leo", "Vedado") */
+  label: string;
   sourceCurrency: Currency;
   cortes: Corte[];
   purchases: Purchase[];
   resumen: ResumenRow[];
+  /** Avisos de parseo específicos de este local (continuidad de stock, hojas faltantes, etc.) */
+  warnings: string[];
+}
+
+/** Resultado completo de importar el Excel */
+export interface InventorySnapshot {
+  version: 2;
+  fileName: string;
+  importedAt: string;
+  locations: LocationSnapshot[];
+  /** Avisos globales, no asociados a un local específico */
   warnings: string[];
 }
 
@@ -84,7 +102,7 @@ export interface AnalyticsFilters {
   from?: string;
   /** Fecha fin (ISO yyyy-mm-dd), inclusiva */
   to?: string;
-  /** Índices de cortes seleccionados (undefined = todos) */
+  /** Ids de corte (Corte.id, no el número de la hoja) seleccionados (undefined = todos) */
   cortes?: number[];
 }
 
@@ -104,7 +122,8 @@ export type Quadrant =
   | "no-sales";
 
 export interface CorteProductRecord {
-  corte: number;
+  /** Corte.id del corte al que corresponde esta línea */
+  corteId: number;
   startDate: string;
   endDate: string;
   initialStock: number;
@@ -143,7 +162,8 @@ export interface ProductAnalytics {
 }
 
 export interface CorteAggregate {
-  index: number;
+  /** Corte.id del corte (único dentro del local) */
+  id: number;
   startDate: string;
   endDate: string;
   days: number;

@@ -1,7 +1,9 @@
 import { get, set, del } from "idb-keyval";
 import type { InventorySnapshot } from "@inventory/core";
 
-const KEY = "inventory-analyzer:snapshot:v1";
+// v2: InventorySnapshot pasó a la forma multi-local (snapshot.locations[]). Se cambia la key
+// para que un snapshot viejo (forma plana) simplemente no se lea más, en vez de romper la app.
+const KEY = "inventory-analyzer:snapshot:v2";
 
 export async function loadSnapshot(): Promise<InventorySnapshot | null> {
   const value = await get<InventorySnapshot>(KEY);

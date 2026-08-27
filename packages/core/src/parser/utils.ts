@@ -69,12 +69,15 @@ export interface CorteTitleInfo {
   index: number;
   exchangeRate: number | null;
   startDate: string;
-  endDate: string;
+  /** null si el título solo trae una fecha (ej. algunos locales titulan "Corte N (tasa) fecha",
+   *  sin rango) — se completa después comparando con el corte siguiente. */
+  endDate: string | null;
 }
 
 /**
- * Parsea un título de corte, p.ej. "Corte 2 (515) 30/03/26 - 2/04/26".
- * Devuelve null si no es un título de corte o le faltan las fechas.
+ * Parsea un título de corte, p.ej. "Corte 2 (515) 30/03/26 - 2/04/26", o variantes de un solo
+ * local con una sola fecha, p.ej. "Corte 1(523) 14/04/26".
+ * Devuelve null si no es un título de corte o no trae ninguna fecha.
  */
 export function parseCorteTitle(value: unknown): CorteTitleInfo | null {
   if (typeof value !== "string") return null;
@@ -88,10 +91,11 @@ export function parseCorteTitle(value: unknown): CorteTitleInfo | null {
     if (rate) exchangeRate = toNum(rate[1]);
   }
   const dates = [...value.matchAll(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/g)];
-  if (dates.length < 2) return null;
+  if (dates.length < 1) return null;
   const startDate = toISODate(`${dates[0][1]}/${dates[0][2]}/${dates[0][3]}`);
-  const endDate = toISODate(`${dates[1][1]}/${dates[1][2]}/${dates[1][3]}`);
-  if (!startDate || !endDate) return null;
+  if (!startDate) return null;
+  const endDate =
+    dates.length >= 2 ? toISODate(`${dates[1][1]}/${dates[1][2]}/${dates[1][3]}`) : null;
   return { index, exchangeRate, startDate, endDate };
 }
 

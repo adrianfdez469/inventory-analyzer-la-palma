@@ -3,7 +3,7 @@ import { parseWorkbook, InventoryParseError } from "@inventory/core";
 import { useAppStore } from "../store/appStore.js";
 import { saveSnapshot } from "../lib/persistence.js";
 import { fmtDate } from "../lib/format.js";
-import { Card } from "../components/ui.js";
+import { Badge, Card } from "../components/ui.js";
 
 export function ImportPage() {
   const snapshot = useAppStore((s) => s.snapshot);
@@ -33,8 +33,15 @@ export function ImportPage() {
     }
   }
 
+  const allWarnings = snapshot
+    ? [
+        ...snapshot.warnings,
+        ...snapshot.locations.flatMap((loc) => loc.warnings.map((w) => `[${loc.label}] ${w}`)),
+      ]
+    : [];
+
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6 py-10">
+    <div className="mx-auto flex max-w-3xl flex-col gap-6 py-10">
       <div>
         <h1 className="text-2xl font-semibold text-slate-50">Importar inventario</h1>
         <p className="mt-1 text-sm text-slate-400">
@@ -91,34 +98,14 @@ export function ImportPage() {
               Ir al dashboard
             </button>
           </div>
-          <dl className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
+          <dl className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
             <div>
               <dt className="text-slate-500">Archivo</dt>
               <dd className="text-slate-200">{snapshot.fileName}</dd>
             </div>
             <div>
-              <dt className="text-slate-500">Cortes</dt>
-              <dd className="text-slate-200">{snapshot.cortes.length}</dd>
-            </div>
-            <div>
-              <dt className="text-slate-500">Productos</dt>
-              <dd className="text-slate-200">
-                {new Set(snapshot.cortes.flatMap((c) => c.lines.map((l) => l.product))).size}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-slate-500">Compras</dt>
-              <dd className="text-slate-200">{snapshot.purchases.length}</dd>
-            </div>
-            <div>
-              <dt className="text-slate-500">Rango</dt>
-              <dd className="text-slate-200">
-                {snapshot.cortes.length > 0
-                  ? `${fmtDate(snapshot.cortes[0].startDate)} – ${fmtDate(
-                      snapshot.cortes[snapshot.cortes.length - 1].endDate,
-                    )}`
-                  : "—"}
-              </dd>
+              <dt className="text-slate-500">Locales</dt>
+              <dd className="text-slate-200">{snapshot.locations.length}</dd>
             </div>
             <div>
               <dt className="text-slate-500">Importado</dt>
@@ -128,43 +115,57 @@ export function ImportPage() {
             </div>
           </dl>
 
-          {snapshot.resumen.length > 0 && (
-            <div>
-              <h3 className="mb-1 text-xs uppercase tracking-wide text-slate-500">
-                Resumen (CUP)
-              </h3>
-              <div className="overflow-x-auto">
-              <table className="w-full min-w-[420px] text-sm">
-                <thead>
-                  <tr className="text-left text-slate-500">
-                    <th className="py-1">Corte</th>
-                    <th className="py-1">Ventas</th>
-                    <th className="py-1">Ganancia Adrian</th>
-                    <th className="py-1">Ganancia Alejandro</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {snapshot.resumen.map((r) => (
-                    <tr key={r.corte} className="border-t border-slate-800">
-                      <td className="py-1 text-slate-300">{r.corte}</td>
-                      <td className="py-1 text-slate-300">{r.totalSales ?? "—"}</td>
-                      <td className="py-1 text-slate-300">{r.profitAdrian ?? "—"}</td>
-                      <td className="py-1 text-slate-300">{r.profitAlejandro ?? "—"}</td>
+          <div className="overflow-x-auto rounded-lg border border-slate-800">
+            <table className="w-full min-w-[560px] text-sm">
+              <thead>
+                <tr className="border-b border-slate-800 text-left text-slate-500">
+                  <th className="py-2 pl-3">Local</th>
+                  <th className="py-2">Cortes</th>
+                  <th className="py-2">Productos</th>
+                  <th className="py-2">Compras</th>
+                  <th className="py-2">Rango</th>
+                  <th className="py-2 pr-3">Avisos</th>
+                </tr>
+              </thead>
+              <tbody>
+                {snapshot.locations.map((loc) => {
+                  const productCount = new Set(
+                    loc.cortes.flatMap((c) => c.lines.map((l) => l.product)),
+                  ).size;
+                  return (
+                    <tr key={loc.id} className="border-t border-slate-800">
+                      <td className="py-2 pl-3 font-medium text-slate-100">{loc.label}</td>
+                      <td className="py-2 text-slate-300">{loc.cortes.length}</td>
+                      <td className="py-2 text-slate-300">{productCount}</td>
+                      <td className="py-2 text-slate-300">{loc.purchases.length}</td>
+                      <td className="py-2 text-slate-300">
+                        {loc.cortes.length > 0
+                          ? `${fmtDate(loc.cortes[0].startDate)} – ${fmtDate(
+                              loc.cortes[loc.cortes.length - 1].endDate,
+                            )}`
+                          : "—"}
+                      </td>
+                      <td className="py-2 pr-3">
+                        {loc.warnings.length > 0 ? (
+                          <Badge color="amber">{loc.warnings.length}</Badge>
+                        ) : (
+                          <span className="text-slate-500">—</span>
+                        )}
+                      </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              </div>
-            </div>
-          )}
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
-          {snapshot.warnings.length > 0 && (
+          {allWarnings.length > 0 && (
             <div className="rounded-lg border border-amber-800 bg-amber-950/30 p-3">
               <h3 className="mb-1 text-xs uppercase tracking-wide text-amber-400">
-                Avisos
+                Avisos ({allWarnings.length})
               </h3>
-              <ul className="list-inside list-disc text-sm text-amber-200">
-                {snapshot.warnings.map((w, i) => (
+              <ul className="max-h-48 list-inside list-disc overflow-y-auto text-sm text-amber-200">
+                {allWarnings.map((w, i) => (
                   <li key={i}>{w}</li>
                 ))}
               </ul>
