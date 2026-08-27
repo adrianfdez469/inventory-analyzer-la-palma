@@ -1,0 +1,15 @@
+{
+  "name": "inventory-analyzer",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Analizador de inventario y ventas para Ferretería La Palma (PWA Windows/Android)",
+  "packageManager": "pnpm@11.2.2",
+  "scripts": {
+    "dev": "pnpm --filter @inventory/core build && pnpm --filter @inventory/pwa dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "preview": "pnpm --filter @inventory/pwa preview",
+    "icons": "node apps/pwa/scripts/gen-icons.mjs"
+  }
+}

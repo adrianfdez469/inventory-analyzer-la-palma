@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dev-dist/
+coverage/
+*.local
+.DS_Store
+*.log
+.vite/
+
+# Copia real del Excel del negocio usada como fixture de tests — datos sensibles,
+# no debe subirse a un repositorio público. Se mantiene solo local.
+packages/core/tests/fixtures/*.xlsx
