@@ -16,17 +16,23 @@ import { diffDays } from "../parser/utils.js";
 import { filterCortes } from "./filters.js";
 import { computeRankings, computeRestock } from "./rankings.js";
 
+// La ganancia real del negocio es "Dinero Tienda 50%" (la parte de la tienda) + "Ganancia
+// Ale/Adrian" (la parte del inversor) — ambas ya calculadas en el Excel a partir de Dinero Total
+// Vendido menos la Inversión recuperada. La app no debe recalcular esto: solo suma columnas que
+// el Excel ya calculó. unitProfit*soldQty (columna "Ganancia" × "cantidad vendida") y
+// (salePrice-purchasePrice)*soldQty son fallbacks para datos incompletos; en la práctica coinciden
+// siempre con la suma de reparto, pero esta última es la fuente de la verdad.
 function lineProfit(line: CorteLine): number | null {
-  if (line.unitProfit != null) return line.unitProfit * line.soldQty;
-  if (line.purchasePrice != null && line.salePrice != null) {
-    return (line.salePrice - line.purchasePrice) * line.soldQty;
-  }
   if (
     line.profitAdrian != null ||
     line.profitAlejandro != null ||
     line.storeShare != null
   ) {
     return (line.profitAdrian ?? 0) + (line.profitAlejandro ?? 0) + (line.storeShare ?? 0);
+  }
+  if (line.unitProfit != null) return line.unitProfit * line.soldQty;
+  if (line.purchasePrice != null && line.salePrice != null) {
+    return (line.salePrice - line.purchasePrice) * line.soldQty;
   }
   return null;
 }
