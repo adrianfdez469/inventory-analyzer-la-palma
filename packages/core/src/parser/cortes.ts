@@ -36,11 +36,13 @@ const ALIASES: Record<keyof ColumnMap, string[]> = {
   remaining: ["restante"],
   remainingAlt: ["porductos restantes", "productos restantes"],
   revenue: ["dinero total vendido"],
-  adrianInvProfit: ["dinero adrian inv"],
+  // "dinero ale" cubre el formato de un solo dueño anterior a la sociedad con Adrian
+  // (ej. "Dinero Ale 50%"), donde el mismo rol de inversor se llamaba "Ale".
+  adrianInvProfit: ["dinero adrian inv", "dinero ale"],
   profitAlejandro: ["ganancia alejandro"],
   storeShare: ["dinero tienda"],
-  adrianInvestment: ["inversion adrian"],
-  profitAdrian: ["ganancia adrian"],
+  adrianInvestment: ["inversion adrian", "inversion ale"],
+  profitAdrian: ["ganancia adrian", "ganancia ale"],
 };
 
 function mapColumns(headerRow: unknown[]): ColumnMap {

@@ -17,8 +17,11 @@ function cleanSheetName(name: string): string {
 }
 
 // Detecta hojas de productos con o sin nombre de local: "Productos USD" (formato viejo,
-// un solo negocio) o "Productos <Local> USD/CUP" / "Producto <Local> USD/CUP" (varios locales).
-const PRODUCT_SHEET_RE = /^productos?(?:\s+(.+?))?\s+(usd|cup)$/i;
+// un solo negocio) o "Productos <Local> USD/CUP" (varios locales, formato actual) o
+// "Productos USD/CUP <Local>" (formato de archivos anteriores a la sociedad con Adrian, donde
+// la moneda aparece antes del local, ej. "Productos CUP Palma", "Producto CUP Vedado").
+const PRODUCT_SHEET_LEAD_RE = /^productos?\s+(.+)$/i;
+const CURRENCY_TOKEN_RE = /^(usd|cup)$/i;
 
 const DEFAULT_LOCATION_ID = "palma";
 const DEFAULT_LOCATION_LABEL = "Palma";
@@ -30,17 +33,32 @@ interface ProductSheetMatch {
   currency: Currency;
 }
 
+// La moneda puede aparecer en cualquier posición dentro del resto del nombre; el resto de los
+// tokens (en su orden original) forman el nombre del local.
+function matchProductSheetName(
+  clean: string,
+): { locationLabel: string; currency: Currency } | null {
+  const lead = PRODUCT_SHEET_LEAD_RE.exec(clean);
+  if (!lead) return null;
+  const tokens = lead[1].trim().split(/\s+/);
+  const currencyIdx = tokens.findIndex((t) => CURRENCY_TOKEN_RE.test(t));
+  if (currencyIdx === -1) return null;
+  const currency: Currency = /usd/i.test(tokens[currencyIdx]) ? "USD" : "CUP";
+  const locationTokens = tokens.filter((_, i) => i !== currencyIdx);
+  const locationLabel = locationTokens.join(" ").trim() || DEFAULT_LOCATION_LABEL;
+  return { locationLabel, currency };
+}
+
 function findProductSheets(sheetNames: string[], hidden: Set<string>): ProductSheetMatch[] {
   const matches: ProductSheetMatch[] = [];
   for (const rawName of sheetNames) {
     if (hidden.has(rawName)) continue;
     const clean = cleanSheetName(rawName);
-    const m = PRODUCT_SHEET_RE.exec(clean);
+    const m = matchProductSheetName(clean);
     if (!m) continue;
-    const locationLabel = m[1]?.trim() || DEFAULT_LOCATION_LABEL;
-    const locationId = m[1]?.trim() ? norm(locationLabel) : DEFAULT_LOCATION_ID;
-    const currency: Currency = /usd/i.test(m[2]) ? "USD" : "CUP";
-    matches.push({ rawName, locationId, locationLabel, currency });
+    const locationId =
+      m.locationLabel === DEFAULT_LOCATION_LABEL ? DEFAULT_LOCATION_ID : norm(m.locationLabel);
+    matches.push({ rawName, locationId, locationLabel: m.locationLabel, currency: m.currency });
   }
   return matches;
 }
