@@ -82,7 +82,7 @@ export function EmptyState({
   );
 }
 
-const QUADRANT_LABELS: Record<Quadrant, string> = {
+export const QUADRANT_LABELS: Record<Quadrant, string> = {
   star: "Estrella",
   volume: "Volumen",
   niche: "Nicho rentable",

@@ -33,13 +33,15 @@ describe.skipIf(!hasFixture)("computeAnalytics (sin filtros)", () => {
   it("el ranking más jugoso encabeza con Bombilla recargable 15W", () => {
     const analytics = computeAnalytics(loadPalma(), {});
     expect(analytics.rankings.juiciest[0].product).toBe("Bombilla recargable 15W");
-    expect(analytics.rankings.juiciest[0].profitPerDay).toBeCloseTo(1.91, 2);
+    // profit = solo "Ganancia Adrian" (la parte del dueño del Excel); excluye "Dinero Tienda 50%"
+    // (comisión de la tienda) y "Ganancia Alejandro" (el otro socio, ~40% del remanente).
+    expect(analytics.rankings.juiciest[0].profitPerDay).toBeCloseTo(0.573, 2);
   });
 
-  it("el Taladro Percutor tiene profitPerDay ≈1.76", () => {
+  it("el Taladro Percutor tiene profitPerDay ≈0.53 (solo Ganancia Adrian)", () => {
     const analytics = computeAnalytics(loadPalma(), {});
     const taladro = analytics.products.find((p) => p.product === "Taladro Percutor")!;
-    expect(taladro.profitPerDay).toBeCloseTo(1.76, 2);
+    expect(taladro.profitPerDay).toBeCloseTo(0.53, 2);
   });
 
   it("sugiere reponer Caja de breaker de 8 posiciones e Interruptor Simple", () => {

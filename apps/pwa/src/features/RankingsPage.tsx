@@ -11,11 +11,16 @@ import {
   ZAxis,
 } from "recharts";
 import { ResponsiveContainer } from "recharts";
-import type { ProductAnalytics } from "@inventory/core";
+import type { ProductAnalytics, Quadrant } from "@inventory/core";
 import { useAnalytics } from "../AnalyticsContext.js";
 import { useAppStore } from "../store/appStore.js";
 import { money, fmtQty, fmtPct } from "../lib/format.js";
-import { Card, EmptyState, QuadrantBadge, ScoreBar } from "../components/ui.js";
+import { Card, EmptyState, QUADRANT_LABELS, QuadrantBadge, ScoreBar } from "../components/ui.js";
+import { DataTable, type DataTableColumn } from "../components/DataTable.js";
+
+interface RankedProduct extends ProductAnalytics {
+  rank: number;
+}
 
 type Tab = "mostSold" | "leastSold" | "juiciest";
 
@@ -62,8 +67,49 @@ export function RankingsPage() {
   }
 
   const rate = analytics.displayRate;
-  const list = analytics.rankings[tab].slice(0, 20);
+  const list: RankedProduct[] = analytics.rankings[tab]
+    .slice(0, 20)
+    .map((p, i) => ({ ...p, rank: i + 1 }));
   const scatterData = analytics.products.filter((p) => p.unitsSold > 0);
+
+  const columns: DataTableColumn<RankedProduct>[] = [
+    { key: "rank", label: "#", type: "number", value: (p) => p.rank, align: "right" },
+    {
+      key: "product",
+      label: "Producto",
+      value: (p) => p.product,
+      render: (p) => <span className="font-medium text-slate-100">{p.product}</span>,
+    },
+    {
+      key: "unitsSold",
+      label: "Vendidos",
+      type: "number",
+      value: (p) => p.unitsSold,
+      render: (p) => fmtQty(p.unitsSold),
+    },
+    {
+      key: "profitPerDay",
+      label: "Ganancia/día",
+      type: "number",
+      value: (p) => p.profitPerDay,
+      render: (p) => money(p.profitPerDay, currency, rate),
+    },
+    {
+      key: "juicinessScore",
+      label: "Score",
+      type: "number",
+      value: (p) => p.juicinessScore,
+      render: (p) => <ScoreBar value={p.juicinessScore} />,
+    },
+    {
+      key: "quadrant",
+      label: "Cuadrante",
+      type: "select",
+      value: (p) => p.quadrant,
+      optionLabel: (raw) => QUADRANT_LABELS[raw as Quadrant] ?? raw,
+      render: (p) => <QuadrantBadge quadrant={p.quadrant} />,
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-6 p-4">
@@ -79,47 +125,16 @@ export function RankingsPage() {
         ))}
       </div>
 
-      <Card className="overflow-x-auto">
-        <table className="w-full min-w-[560px] border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-slate-800">
-              <th className="th">#</th>
-              <th className="th">Producto</th>
-              <th className="th">Vendidos</th>
-              <th className="th">Ganancia/día</th>
-              <th className="th">Score</th>
-              <th className="th">Cuadrante</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.map((p, i) => (
-              <tr
-                key={p.product}
-                className="cursor-pointer border-b border-slate-900 hover:bg-slate-800/40"
-                onClick={() => setDetailProduct(p.product)}
-              >
-                <td className="td text-slate-500">{i + 1}</td>
-                <td className="td font-medium text-slate-100">{p.product}</td>
-                <td className="td">{fmtQty(p.unitsSold)}</td>
-                <td className="td">{money(p.profitPerDay, currency, rate)}</td>
-                <td className="td">
-                  <ScoreBar value={p.juicinessScore} />
-                </td>
-                <td className="td">
-                  <QuadrantBadge quadrant={p.quadrant} />
-                </td>
-              </tr>
-            ))}
-            {list.length === 0 && (
-              <tr>
-                <td className="td text-slate-500" colSpan={6}>
-                  Sin datos para este ranking.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </Card>
+      <DataTable
+        columns={columns}
+        rows={list}
+        rowKey={(p) => p.product}
+        onRowClick={(p) => setDetailProduct(p.product)}
+        defaultSortKey="rank"
+        defaultSortDir={1}
+        minWidthClassName="min-w-[560px]"
+        emptyMessage="Sin datos para este ranking."
+      />
 
       <Card>
         <h3 className="mb-1 text-sm font-medium text-slate-300">

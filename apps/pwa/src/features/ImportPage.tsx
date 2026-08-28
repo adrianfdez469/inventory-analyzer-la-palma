@@ -1,9 +1,17 @@
 import { useRef, useState } from "react";
-import { parseWorkbook, InventoryParseError } from "@inventory/core";
+import { parseWorkbook, InventoryParseError, type LocationSnapshot } from "@inventory/core";
 import { useAppStore } from "../store/appStore.js";
 import { saveSnapshot } from "../lib/persistence.js";
 import { fmtDate } from "../lib/format.js";
 import { Badge, Card } from "../components/ui.js";
+import { DataTable, type DataTableColumn } from "../components/DataTable.js";
+
+interface LocationRow {
+  loc: LocationSnapshot;
+  productCount: number;
+  rangeStart: string | null;
+  rangeEnd: string | null;
+}
 
 export function ImportPage() {
   const snapshot = useAppStore((s) => s.snapshot);
@@ -115,49 +123,7 @@ export function ImportPage() {
             </div>
           </dl>
 
-          <div className="overflow-x-auto rounded-lg border border-slate-800">
-            <table className="w-full min-w-[560px] text-sm">
-              <thead>
-                <tr className="border-b border-slate-800 text-left text-slate-500">
-                  <th className="py-2 pl-3">Local</th>
-                  <th className="py-2">Cortes</th>
-                  <th className="py-2">Productos</th>
-                  <th className="py-2">Compras</th>
-                  <th className="py-2">Rango</th>
-                  <th className="py-2 pr-3">Avisos</th>
-                </tr>
-              </thead>
-              <tbody>
-                {snapshot.locations.map((loc) => {
-                  const productCount = new Set(
-                    loc.cortes.flatMap((c) => c.lines.map((l) => l.product)),
-                  ).size;
-                  return (
-                    <tr key={loc.id} className="border-t border-slate-800">
-                      <td className="py-2 pl-3 font-medium text-slate-100">{loc.label}</td>
-                      <td className="py-2 text-slate-300">{loc.cortes.length}</td>
-                      <td className="py-2 text-slate-300">{productCount}</td>
-                      <td className="py-2 text-slate-300">{loc.purchases.length}</td>
-                      <td className="py-2 text-slate-300">
-                        {loc.cortes.length > 0
-                          ? `${fmtDate(loc.cortes[0].startDate)} – ${fmtDate(
-                              loc.cortes[loc.cortes.length - 1].endDate,
-                            )}`
-                          : "—"}
-                      </td>
-                      <td className="py-2 pr-3">
-                        {loc.warnings.length > 0 ? (
-                          <Badge color="amber">{loc.warnings.length}</Badge>
-                        ) : (
-                          <span className="text-slate-500">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <LocationsTable locations={snapshot.locations} />
 
           {allWarnings.length > 0 && (
             <div className="rounded-lg border border-amber-800 bg-amber-950/30 p-3">
@@ -174,5 +140,57 @@ export function ImportPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+function LocationsTable({ locations }: { locations: LocationSnapshot[] }) {
+  const rows: LocationRow[] = locations.map((loc) => ({
+    loc,
+    productCount: new Set(loc.cortes.flatMap((c) => c.lines.map((l) => l.product))).size,
+    rangeStart: loc.cortes[0]?.startDate ?? null,
+    rangeEnd: loc.cortes[loc.cortes.length - 1]?.endDate ?? null,
+  }));
+
+  const columns: DataTableColumn<LocationRow>[] = [
+    {
+      key: "label",
+      label: "Local",
+      value: (r) => r.loc.label,
+      render: (r) => <span className="font-medium text-slate-100">{r.loc.label}</span>,
+    },
+    { key: "cortes", label: "Cortes", type: "number", value: (r) => r.loc.cortes.length },
+    { key: "productos", label: "Productos", type: "number", value: (r) => r.productCount },
+    { key: "compras", label: "Compras", type: "number", value: (r) => r.loc.purchases.length },
+    {
+      key: "rango",
+      label: "Rango",
+      value: (r) => (r.rangeStart ? `${r.rangeStart} – ${r.rangeEnd}` : null),
+      sortable: true,
+      filterable: false,
+      render: (r) =>
+        r.rangeStart ? `${fmtDate(r.rangeStart)} – ${fmtDate(r.rangeEnd)}` : "—",
+    },
+    {
+      key: "avisos",
+      label: "Avisos",
+      type: "number",
+      value: (r) => r.loc.warnings.length,
+      render: (r) =>
+        r.loc.warnings.length > 0 ? (
+          <Badge color="amber">{r.loc.warnings.length}</Badge>
+        ) : (
+          <span className="text-slate-500">—</span>
+        ),
+    },
+  ];
+
+  return (
+    <DataTable
+      columns={columns}
+      rows={rows}
+      rowKey={(r) => r.loc.id}
+      minWidthClassName="min-w-[560px]"
+      emptyMessage="Sin locales."
+    />
   );
 }

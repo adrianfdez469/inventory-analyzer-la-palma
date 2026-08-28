@@ -16,25 +16,16 @@ import { diffDays } from "../parser/utils.js";
 import { filterCortes } from "./filters.js";
 import { computeRankings, computeRestock } from "./rankings.js";
 
-// La ganancia real del negocio es "Dinero Tienda 50%" (la parte de la tienda) + "Ganancia
-// Ale/Adrian" (la parte del inversor) — ambas ya calculadas en el Excel a partir de Dinero Total
-// Vendido menos la Inversión recuperada. La app no debe recalcular esto: solo suma columnas que
-// el Excel ya calculó. unitProfit*soldQty (columna "Ganancia" × "cantidad vendida") y
-// (salePrice-purchasePrice)*soldQty son fallbacks para datos incompletos; en la práctica coinciden
-// siempre con la suma de reparto, pero esta última es la fuente de la verdad.
+// El dueño del Excel es un consignatario: pone la mercancía, la tienda solo la vende a cambio de
+// una comisión. Lo que le importa es SOLO su propia ganancia — la columna "Ganancia Adrian"
+// (alias también de "Ganancia Ale" en el formato legado de un solo dueño, ver [[cortes.ts ALIASES]]).
+// "Ganancia Alejandro" es el reparto del OTRO socio (~40% del remanente tras la comisión de la
+// tienda) y "Dinero Tienda 50%" es la comisión de la tienda — ninguna de las dos es plata del
+// dueño del archivo, así que no se suman. Estas columnas ya vienen calculadas en el Excel; la app
+// no las recalcula, solo las lee. Sin la columna no hay forma de saber cuánto de la ganancia total
+// (unitProfit) le corresponde al dueño, así que no se estima con unitProfit/precios — sin dato.
 function lineProfit(line: CorteLine): number | null {
-  if (
-    line.profitAdrian != null ||
-    line.profitAlejandro != null ||
-    line.storeShare != null
-  ) {
-    return (line.profitAdrian ?? 0) + (line.profitAlejandro ?? 0) + (line.storeShare ?? 0);
-  }
-  if (line.unitProfit != null) return line.unitProfit * line.soldQty;
-  if (line.purchasePrice != null && line.salePrice != null) {
-    return (line.salePrice - line.purchasePrice) * line.soldQty;
-  }
-  return null;
+  return line.profitAdrian;
 }
 
 function lineRevenue(line: CorteLine): number {
@@ -178,6 +169,7 @@ export function computeAnalytics(
 
     const perCorte: CorteProductRecord[] = refs.map((r) => ({
       corteId: r.corte.id,
+      corteIndex: r.corte.index,
       startDate: r.corte.startDate,
       endDate: r.corte.endDate,
       initialStock: r.line.initialStock,
@@ -249,6 +241,7 @@ export function computeAnalytics(
 
   const corteAggregates: CorteAggregate[] = filtered.map((corte) => ({
     id: corte.id,
+    index: corte.index,
     startDate: corte.startDate,
     endDate: corte.endDate,
     days: corte.days,

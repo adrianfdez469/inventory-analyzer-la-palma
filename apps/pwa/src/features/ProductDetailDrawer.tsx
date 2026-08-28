@@ -1,7 +1,9 @@
+import type { CorteProductRecord, Purchase } from "@inventory/core";
 import { useAnalytics } from "../AnalyticsContext.js";
 import { useAppStore } from "../store/appStore.js";
 import { fmtDate, fmtPct, fmtQty, money } from "../lib/format.js";
 import { QuadrantBadge } from "../components/ui.js";
+import { DataTable, type DataTableColumn } from "../components/DataTable.js";
 
 export function ProductDetailDrawer() {
   const analytics = useAnalytics();
@@ -79,69 +81,110 @@ export function ProductDetailDrawer() {
           <h3 className="mb-2 text-sm font-medium text-slate-300">
             Historial de precio de compra (USD)
           </h3>
-          <div className="overflow-x-auto rounded-lg border border-slate-800">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-slate-800 text-slate-500">
-                  <th className="th">Fecha</th>
-                  <th className="th">Cantidad</th>
-                  <th className="th">Precio</th>
-                  <th className="th">Tasa</th>
-                  <th className="th">Proveedor</th>
-                </tr>
-              </thead>
-              <tbody>
-                {product.purchasePrice.history.map((h, i) => (
-                  <tr key={i} className="border-b border-slate-900">
-                    <td className="td">{fmtDate(h.date)}</td>
-                    <td className="td">{h.quantity}</td>
-                    <td className="td">{money(h.purchasePriceUSD, "USD", rate)}</td>
-                    <td className="td">{h.exchangeRate ?? "—"}</td>
-                    <td className="td">{h.supplier ?? "—"}</td>
-                  </tr>
-                ))}
-                {product.purchasePrice.history.length === 0 && (
-                  <tr>
-                    <td className="td text-slate-500" colSpan={5}>
-                      Sin compras registradas.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <PurchaseHistoryTable history={product.purchasePrice.history} rate={rate} />
         </div>
 
         <div>
           <h3 className="mb-2 text-sm font-medium text-slate-300">Evolución por corte</h3>
-          <div className="overflow-x-auto rounded-lg border border-slate-800">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-slate-800 text-slate-500">
-                  <th className="th">Corte</th>
-                  <th className="th">Inicial</th>
-                  <th className="th">Vendido</th>
-                  <th className="th">Restante</th>
-                  <th className="th">Ingreso</th>
-                  <th className="th">Ganancia</th>
-                </tr>
-              </thead>
-              <tbody>
-                {product.perCorte.map((c) => (
-                  <tr key={c.corteId} className="border-b border-slate-900">
-                    <td className="td">C{c.corteId}</td>
-                    <td className="td">{fmtQty(c.initialStock)}</td>
-                    <td className="td">{fmtQty(c.soldQty)}</td>
-                    <td className="td">{fmtQty(c.remaining)}</td>
-                    <td className="td">{money(c.revenue, currency, rate)}</td>
-                    <td className="td">{money(c.profit, currency, rate)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <PerCorteTable perCorte={product.perCorte} currency={currency} rate={rate} />
         </div>
       </div>
     </div>
+  );
+}
+
+function PurchaseHistoryTable({
+  history,
+  rate,
+}: {
+  history: Purchase[];
+  rate: number | null;
+}) {
+  const columns: DataTableColumn<Purchase>[] = [
+    {
+      key: "date",
+      label: "Fecha",
+      value: (h) => h.date,
+      render: (h) => fmtDate(h.date),
+    },
+    { key: "quantity", label: "Cantidad", type: "number", value: (h) => h.quantity },
+    {
+      key: "purchasePriceUSD",
+      label: "Precio",
+      type: "number",
+      value: (h) => h.purchasePriceUSD,
+      render: (h) => money(h.purchasePriceUSD, "USD", rate),
+    },
+    { key: "exchangeRate", label: "Tasa", type: "number", value: (h) => h.exchangeRate },
+    { key: "supplier", label: "Proveedor", value: (h) => h.supplier },
+  ];
+
+  return (
+    <DataTable
+      columns={columns}
+      rows={history}
+      rowKey={(h, i) => `${h.date ?? ""}-${h.supplier ?? ""}-${i}`}
+      emptyMessage="Sin compras registradas."
+    />
+  );
+}
+
+function PerCorteTable({
+  perCorte,
+  currency,
+  rate,
+}: {
+  perCorte: CorteProductRecord[];
+  currency: "USD" | "CUP";
+  rate: number | null;
+}) {
+  const columns: DataTableColumn<CorteProductRecord>[] = [
+    { key: "corteIndex", label: "Corte", type: "number", value: (c) => c.corteIndex, render: (c) => `C${c.corteIndex}` },
+    {
+      key: "initialStock",
+      label: "Inicial",
+      type: "number",
+      value: (c) => c.initialStock,
+      render: (c) => fmtQty(c.initialStock),
+    },
+    {
+      key: "soldQty",
+      label: "Vendido",
+      type: "number",
+      value: (c) => c.soldQty,
+      render: (c) => fmtQty(c.soldQty),
+    },
+    {
+      key: "remaining",
+      label: "Restante",
+      type: "number",
+      value: (c) => c.remaining,
+      render: (c) => fmtQty(c.remaining),
+    },
+    {
+      key: "revenue",
+      label: "Ingreso",
+      type: "number",
+      value: (c) => c.revenue,
+      render: (c) => money(c.revenue, currency, rate),
+    },
+    {
+      key: "profit",
+      label: "Ganancia",
+      type: "number",
+      value: (c) => c.profit,
+      render: (c) => money(c.profit, currency, rate),
+    },
+  ];
+
+  return (
+    <DataTable
+      columns={columns}
+      rows={perCorte}
+      rowKey={(c) => c.corteId}
+      defaultSortKey="corteIndex"
+      defaultSortDir={1}
+      emptyMessage="Sin cortes en el rango seleccionado."
+    />
   );
 }

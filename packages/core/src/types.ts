@@ -124,6 +124,8 @@ export type Quadrant =
 export interface CorteProductRecord {
   /** Corte.id del corte al que corresponde esta línea */
   corteId: number;
+  /** Corte.index — el número tal cual aparece en el Excel, para mostrar en UI */
+  corteIndex: number;
   startDate: string;
   endDate: string;
   initialStock: number;
@@ -164,6 +166,8 @@ export interface ProductAnalytics {
 export interface CorteAggregate {
   /** Corte.id del corte (único dentro del local) */
   id: number;
+  /** Corte.index — el número tal cual aparece en el Excel, para mostrar en UI */
+  index: number;
   startDate: string;
   endDate: string;
   days: number;

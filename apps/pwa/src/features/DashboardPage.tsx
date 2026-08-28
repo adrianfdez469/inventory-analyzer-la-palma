@@ -49,7 +49,7 @@ export function DashboardPage() {
   const { totals } = analytics;
 
   const corteData = analytics.corteAggregates.map((c) => ({
-    name: `C${c.id}`,
+    name: `C${c.index}`,
     profit: c.profit,
     units: c.unitsSold,
   }));
